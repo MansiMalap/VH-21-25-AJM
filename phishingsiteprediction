@@ -1,0 +1,304 @@
+import pandas as pd # use for data manipulation and analysis
+import numpy as np # use for multi-dimensional array and matrix
+
+import seaborn as sns # use for high-level interface for drawing attractive and informative statistical graphics 
+import matplotlib.pyplot as plt # It provides an object-oriented API for embedding plots into applications
+get_ipython().run_line_magic('matplotlib', 'inline')
+# It sets the backend of matplotlib to the 'inline' backend:
+import time # calculate time 
+
+from sklearn.linear_model import LogisticRegression # algo use to predict good or bad
+from sklearn.naive_bayes import MultinomialNB # nlp algo use to predict good or bad
+
+from sklearn.model_selection import train_test_split # spliting the data between feature and target
+from sklearn.metrics import classification_report # gives whole report about metrics (e.g, recall,precision,f1_score,c_m)
+from sklearn.metrics import confusion_matrix # gives info about actual and predict
+from nltk.tokenize import RegexpTokenizer # regexp tokenizers use to split words from text  
+from nltk.stem.snowball import SnowballStemmer # stemmes words
+from sklearn.feature_extraction.text import CountVectorizer # create sparse matrix of words using regexptokenizes  
+from sklearn.pipeline import make_pipeline # use for combining all prerocessors techniuqes and algos
+
+from PIL import Image # getting images in notebook
+# from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator# creates words colud
+
+from bs4 import BeautifulSoup # use for scraping the data from website
+from selenium import webdriver # use for automation chrome 
+import networkx as nx # for the creation, manipulation, and study of the structure, dynamics, and functions of complex networks.
+
+import pickle# use to dump model 
+
+import warnings # ignores pink warnings 
+warnings.filterwarnings('ignore')
+
+
+# In[ ]:
+
+
+
+
+
+# In[2]:
+
+
+phishing_data1 = pd.read_csv('phishing_urls.csv',usecols=['domain','label'],encoding='latin1', error_bad_lines=False)
+phishing_data1.columns = ['URL','Label']
+phishing_data2 = pd.read_csv('phishing_data.csv')
+phishing_data2.columns = ['URL','Label']
+phishing_data3 = pd.read_csv('phishing_data2.csv')
+phishing_data3.columns = ['URL','Label']
+
+
+# In[3]:
+
+
+read_csv() # use to load or import csv file
+read_csv("C:\\Users\\mmdc_\\phishing_site_urls.csv")
+
+
+# In[4]:
+
+
+variable = pd.read_csv(r"C:\\Users\\mmdc_\\phishing_site_urls.csv")
+variable.head()
+
+
+# In[39]:
+
+
+variable = pd.read_csv(r"C:\\Users\\mmdc_\\phishing_site_urls.csv")
+variable.head()
+
+
+# In[13]:
+
+
+variable = pd.read_csv(r"C:\\Users\\mmdc_\\phishing_site_urls.csv")
+variable.tail()
+
+
+# In[14]:
+
+
+variable = pd.read_csv(r"C:\\Users\\mmdc_\\phishing_site_urls.csv")
+variable.info()
+
+
+# In[15]:
+
+
+variable = pd.read_csv(r"C:\\Users\\mmdc_\\phishing_site_urls.csv")
+variable.isnull().sum() # there is no missing values
+
+
+# In[16]:
+
+
+#create a dataframe of classes counts
+label_counts = pd.DataFrame(variable.Label.value_counts())
+
+
+# In[17]:
+
+
+#visualizing target_col
+sns.set_style('darkgrid')
+sns.barplot(label_counts.index,label_counts.Label)
+
+
+# In[18]:
+
+
+tokenizer = RegexpTokenizer(r'[A-Za-z]+')
+
+
+# In[19]:
+
+
+phish_data.URL[0]
+
+
+# In[20]:
+
+
+tokenizer = RegexpTokenizer(r'[A-Za-z]+')
+
+
+# In[21]:
+
+
+variable.URL[0]
+
+
+# In[22]:
+
+
+# this will be pull letter which matches to expression
+tokenizer.tokenize(variable.URL[0]) # using first row
+
+
+# In[23]:
+
+
+print('Getting words tokenized ...')
+t0= time.perf_counter()
+variable['text_tokenized'] = variable.URL.map(lambda t: tokenizer.tokenize(t))
+# doing with all rows
+t1 = time.perf_counter() - t0
+print('Time taken',t1 ,'sec')
+
+
+# In[24]:
+
+
+variable.sample(5)
+
+
+# In[27]:
+
+
+stemmer = SnowballStemmer("english")
+# choose a language
+print('Getting words stemmed ...')
+t0= time.perf_counter()
+variable['text_stemmed'] = variable['text_tokenized'].map(lambda l: [stemmer.stem(word) for word in l])
+t1= time.perf_counter() - t0
+print('Time taken',t1 ,'sec')
+
+
+# In[26]:
+
+
+variable.sample(3)
+
+
+# In[29]:
+
+
+print('Getting joiningwords ...')
+t0= time.perf_counter()
+variable['text_sent'] = variable['text_stemmed'].map(lambda l: ' '.join(l))
+t1= time.perf_counter() - t0
+print('Time taken',t1 ,'sec')
+
+
+# In[31]:
+
+
+
+variable.sample(3)
+
+
+# In[32]:
+
+
+
+#sliceing classes
+bad_sites =  variable[variable.Label == 'bad']
+good_sites = variable[variable.Label == 'good']
+
+
+# In[33]:
+
+
+bad_sites.head()
+
+
+# In[34]:
+
+
+good_sites.head()
+
+
+# In[35]:
+
+
+def plot_wordcloud(text, mask=None, max_words=400, max_font_size=120, figure_size=(24.0,16.0), 
+                   title = None, title_size=40, image_color=False):
+    stopwords = set(STOPWORDS)
+    more_stopwords = {'com','http'}
+    stopwords = stopwords.union(more_stopwords)
+
+    wordcloud = WordCloud(background_color='white',
+                    stopwords = stopwords,
+                    max_words = max_words,
+                    max_font_size = max_font_size, 
+                    random_state = 42,
+                    mask = mask)
+    wordcloud.generate(text)
+    
+    plt.figure(figsize=figure_size)
+    if image_color:
+        image_colors = ImageColorGenerator(mask);
+        plt.imshow(wordcloud.recolor(color_func=image_colors), interpolation="bilinear");
+        plt.title(title, fontdict={'size': title_size,  
+                                  'verticalalignment': 'bottom'})
+    else:
+        plt.imshow(wordcloud);
+        plt.title(title, fontdict={'size': title_size, 'color': 'green', 
+                                  'verticalalignment': 'bottom'})
+    plt.axis('off');
+    plt.tight_layout()
+
+
+# In[36]:
+
+
+data = good_sites.text_sent
+data.reset_index(drop=True, inplace=True)
+
+
+# common_text = str(data)
+# common_mask = np.array(Image.open('C:\\Users\\mmdc_\\star.png'))
+# plot_wordcloud(common_text, common_mask, max_words=400, max_font_size=120, 
+#                title = 'Most common words use in good urls', title_size=15)
+# 
+
+# <img src="star.png" style="width:200px;height:400px" />
+
+# In[ ]:
+
+
+
+
+
+# In[45]:
+
+
+pip install imutils
+
+
+# In[59]:
+
+
+imagePaths = list(paths.list_images("C:\Users\mmdc_\1.Phising\star"))
+
+
+# In[66]:
+
+
+common_text = str(data)
+common_mask = np.array(Image.open(r"C:\\Users\\mmdc_\\1.Phising\\star.png"))
+style="width:200 ;height:400" 
+
+
+# <img src="star.png" style="width:200 ;height:400" />
+
+# In[64]:
+
+
+
+data = bad_sites.text_sent
+data.reset_index(drop=True, inplace=True)
+
+
+# In[65]:
+
+
+common_text = str(data)
+common_mask = np.array(Image.open(r"C:\\Users\\mmdc_\\1.Phising\\random.png"))
+style="width:200;height:400" 
+
+
+# <img src="random.png" style="width:200 ; height:400" />
+
+# In[ ]:
